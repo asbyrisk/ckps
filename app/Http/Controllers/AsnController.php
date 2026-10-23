@@ -16,7 +16,10 @@ class AsnController extends Controller
     public function index(Request $request)
     {
         $query = Asn::query()
-            ->with('unit')
+            ->with([
+                'unit',
+                'competencies.pelatihans',
+            ])
             ->withCount([
                 'trainings',
                 'competencies',
@@ -64,6 +67,19 @@ class AsnController extends Controller
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();
+
+        $asn->getCollection()->transform(function ($item) {
+            $item->setAttribute(
+                'mapped_trainings',
+                $item->competencies
+                    ->flatMap(fn ($competency) => $competency->pelatihans)
+                    ->unique('id')
+                    ->sortBy('name')
+                    ->values()
+            );
+
+            return $item;
+        });
 
         return view('asn.index', compact('asn'));
     }
@@ -115,6 +131,59 @@ class AsnController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Build training recommendations from the competency mapping maintained by Admin.
+        // A training is recommended when at least one ASN competency is mapped to it.
+        // Required competencies are surfaced separately so the user can see whether the
+        // ASN already satisfies all main competency requirements.
+        $asnCompetencyIds = $asn->competencies->pluck('id')->map(fn ($id) => (int) $id);
+        $mappedTrainings = Pelatihan::query()
+            ->with(['kompetensi' => fn ($query) => $query->orderBy('nama')])
+            ->whereHas('kompetensi', function ($query) use ($asnCompetencyIds) {
+                $query->whereIn('kompetensi.id', $asnCompetencyIds->all());
+            })
+            ->orderBy('name')
+            ->get();
+
+        $recommendations = $mappedTrainings->map(function ($training) use ($asnCompetencyIds) {
+            $mappedCompetencies = $training->kompetensi;
+            $matched = $mappedCompetencies->filter(
+                fn ($competency) => $asnCompetencyIds->contains((int) $competency->id)
+            )->values();
+
+            $required = $mappedCompetencies->filter(
+                fn ($competency) => (bool) $competency->pivot->wajib
+            )->values();
+
+            $matchedRequired = $required->filter(
+                fn ($competency) => $asnCompetencyIds->contains((int) $competency->id)
+            )->values();
+
+            $training->setAttribute('matched_competencies', $matched);
+            $training->setAttribute('required_competencies', $required);
+            $training->setAttribute('matched_required_competencies', $matchedRequired);
+            $training->setAttribute('match_count', $matched->count());
+            $training->setAttribute('required_count', $required->count());
+            $training->setAttribute('required_match_count', $matchedRequired->count());
+            $level = $required->isNotEmpty() && $matchedRequired->count() < $required->count()
+                ? 'sebagian'
+                : 'direkomendasikan';
+
+            $training->setAttribute('recommendation_level', $level);
+            $training->setAttribute(
+                'recommendation_score',
+                ($level === 'direkomendasikan' ? 100000 : 0)
+                    + ($matchedRequired->count() * 100)
+                    + $matched->count()
+            );
+
+            return $training;
+        });
+
+        $recommendations = $recommendations
+            ->sortByDesc('recommendation_score')
+            ->sortBy('name')
+            ->values();
+
         $statusRows = AsnTraining::query()
             ->where('asn_id', $asn->id)
             ->orderByDesc('id')
@@ -144,10 +213,21 @@ class AsnController extends Controller
                 }) ? 'sudah' : 'belum';
             });
 
+        // Do not recommend trainings already completed by this ASN.
+        $completedTrainingIds = $trainingStatus
+            ->filter(fn ($status) => $status === 'sudah')
+            ->keys()
+            ->map(fn ($id) => (int) $id);
+
+        $recommendations = $recommendations
+            ->reject(fn ($training) => $completedTrainingIds->contains((int) $training->id))
+            ->values();
+
         return view('asn.show', compact(
             'asn',
             'trainings',
-            'trainingStatus'
+            'trainingStatus',
+            'recommendations'
         ));
     }
 

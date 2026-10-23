@@ -69,7 +69,7 @@
                 <span>🔒</span>
                 <div>
                     <strong>Akses terbatas</strong>
-                    <p>Data hanya dapat diakses oleh pengguna yang berhasil masuk.</p>
+                    <p>Data hanya dapat diakses oleh pengguna yang berhasil masuk. Hak akses dibedakan antara Admin dan User.</p>
                 </div>
             </div>
 

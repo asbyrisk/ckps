@@ -40,6 +40,7 @@ class AuditLog extends Model
             'training_status_updated' => 'Status pelatihan diubah',
             'unit_transferred' => 'Perpindahan unit kerja',
             'unit_history_canceled' => 'Koreksi perpindahan',
+            'training_competency_mapping_updated' => 'Pemetaan kompetensi-pelatihan diperbarui',
             default => ucfirst(str_replace('_', ' ', (string) $action)),
         };
     }

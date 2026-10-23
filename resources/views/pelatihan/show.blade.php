@@ -13,9 +13,12 @@
                 <h1>{{ $pelatihan->name }}</h1>
                 <p>{{ $pelatihan->code ? 'Kode pelatihan: '.$pelatihan->code : 'Kode pelatihan belum tersedia pada sumber Excel.' }}</p>
             </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                 <span class="count-badge">{{ $pelatihan->kompetensi->count() }} kompetensi</span>
                 <span class="count-badge">{{ $pelatihanAsns->count() }} ASN tercatat</span>
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.pelatihan.mapping.edit', $pelatihan) }}" class="btn btn-small">Kelola Pemetaan</a>
+                @endif
             </div>
         </div>
     </div>

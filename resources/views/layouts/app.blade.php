@@ -29,24 +29,32 @@
             <a href="{{ route('asn.index') }}" class="{{ request()->routeIs('asn.*') ? 'active' : '' }}">ASN</a>
             <a href="{{ route('kompetensi.index') }}" class="{{ request()->routeIs('kompetensi.*') ? 'active' : '' }}">Kompetensi</a>
             <a href="{{ route('laporan.index') }}" class="{{ request()->routeIs('laporan.*') ? 'active' : '' }}">Laporan</a>
-            <a href="{{ route('audit.index') }}" class="{{ request()->routeIs('audit.*') ? 'active' : '' }}">Audit</a>
-            <a href="{{ route('import.index') }}" class="nav-import-mobile {{ request()->routeIs('import.*') ? 'active' : '' }}">Import Excel</a>
+            @if(auth()->user()->isAdmin())
+                <a href="{{ route('audit.index') }}" class="{{ request()->routeIs('audit.*') ? 'active' : '' }}">Audit</a>
+                <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}">Pengguna</a>
+            @endif
+            @if(auth()->user()->isAdmin())
+                <a href="{{ route('import.index') }}" class="nav-import-mobile {{ request()->routeIs('import.*') ? 'active' : '' }}">Import Excel</a>
+            @endif
         </nav>
 
         <div class="header-account">
-            <a href="{{ route('import.index') }}" class="header-import">Import Excel</a>
-            <span class="header-user">{{ auth()->user()->name }}</span>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="btn btn-header-logout">Keluar</button>
-            </form>
-            <details class="mobile-account-menu">
-                <summary>👤 <span>{{ auth()->user()->name }}</span></summary>
-                <div class="mobile-account-popover">
-                    <div class="mobile-account-name">{{ auth()->user()->name }}</div>
+            <details class="account-menu">
+                <summary>
+                    <span class="account-name">{{ auth()->user()->name }}</span>
+                </summary>
+                <div class="account-popover">
+                    <div class="account-profile">
+                        <div class="account-avatar">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</div>
+                        <div class="account-profile-copy">
+                            <strong>{{ auth()->user()->name }}</strong>
+                            <span>{{ auth()->user()->isAdmin() ? 'Administrator' : 'Pengguna' }}</span>
+                        </div>
+                    </div>
+                    <div class="account-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="mobile-account-logout">Keluar</button>
+                        <button type="submit" class="account-logout">Keluar dari akun</button>
                     </form>
                 </div>
             </details>

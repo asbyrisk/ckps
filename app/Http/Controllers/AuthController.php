@@ -73,6 +73,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => 'user',
         ]);
 
         $audit->log('register', 'Akun pengguna baru dibuat: ' . $user->name, $user, null, ['email' => $user->email]);

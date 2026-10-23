@@ -13,7 +13,9 @@
                 <h1>{{ $asn->name }}</h1>
                 <p>Kelola informasi ASN dan status keikutsertaan pada setiap pelatihan.</p>
             </div>
-            <a href="{{ route('asn.edit', $asn) }}" class="btn">✎ Edit Data ASN</a>
+            @if(auth()->user()->isAdmin())
+                <a href="{{ route('asn.edit', $asn) }}" class="btn">✎ Edit Data ASN</a>
+            @endif
         </div>
     </div>
 
@@ -44,6 +46,7 @@
         </div>
     </div>
 
+    @if(auth()->user()->isAdmin())
     <div class="panel" style="margin-bottom:22px;">
         <div class="panel-header">
             <h2>Penugasan / Perpindahan Unit Kerja</h2>
@@ -140,6 +143,9 @@
         @endif
     </div>
 
+    </div>
+    @endif
+
     <div class="panel" style="margin-bottom:22px;">
         <div class="panel-header">
             <div class="page-header-row" style="align-items:center;">
@@ -175,6 +181,7 @@
                             <span class="status-dot"></span>
                             {{ $isSudah ? 'Sudah mengikuti' : ($isDiusulkan ? 'Diusulkan' : 'Belum mengikuti') }}
                         </span>
+                        @if(auth()->user()->isAdmin())
                         <button
                             type="button"
                             class="btn btn-outline btn-small edit-training-btn"
@@ -183,6 +190,7 @@
                         >
                             ✎ Ubah
                         </button>
+                        @endif
                     </div>
                 </div>
             @empty
@@ -193,6 +201,60 @@
                 </div>
             @endforelse
         </div>
+    </div>
+
+    <div class="panel recommendation-panel" style="margin-bottom:22px;">
+        <div class="panel-header">
+            <div class="page-header-row" style="align-items:center;">
+                <div>
+                    <h2>Rekomendasi Pelatihan</h2>
+                    <p>Pelatihan diurutkan berdasarkan kompetensi ASN yang sudah dipetakan oleh Admin.</p>
+                </div>
+                <span class="table-count">{{ $recommendations->count() }} rekomendasi</span>
+            </div>
+        </div>
+
+        @forelse($recommendations as $recommendation)
+            @php
+                $isFull = $recommendation->recommendation_level === 'direkomendasikan';
+                $requiredText = $recommendation->required_count > 0
+                    ? $recommendation->required_match_count . '/' . $recommendation->required_count . ' kompetensi wajib'
+                    : 'Tidak ada kompetensi wajib';
+            @endphp
+            <div class="recommendation-card">
+                <div class="recommendation-main">
+                    <div class="training-icon">🎯</div>
+                    <div class="recommendation-content">
+                        <div class="training-name">
+                            <a href="{{ route('pelatihan.show', $recommendation) }}">{{ $recommendation->name }}</a>
+                        </div>
+                        <span class="training-code">{{ $recommendation->code ? 'Kode: '.$recommendation->code : 'Kode pelatihan belum tersedia' }}</span>
+
+                        <div class="recommendation-meta">
+                            <span class="recommendation-badge {{ $isFull ? 'is-good' : 'is-partial' }}">
+                                {{ $isFull ? 'Direkomendasikan' : 'Sebagian sesuai' }}
+                            </span>
+                            <span class="recommendation-badge">{{ $recommendation->match_count }} kompetensi cocok</span>
+                            <span class="recommendation-badge">{{ $requiredText }}</span>
+                        </div>
+
+                        <div class="recommendation-competencies">
+                            <strong>Kompetensi yang cocok:</strong>
+                            @foreach($recommendation->matched_competencies as $competency)
+                                <span>{{ $competency->nama }}@if($competency->pivot->wajib) <b>· Wajib</b>@endif</span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ route('pelatihan.show', $recommendation) }}" class="btn btn-outline btn-small recommendation-detail">Lihat pelatihan →</a>
+            </div>
+        @empty
+            <div class="empty-state">
+                <div class="empty-icon">🎯</div>
+                <strong>Belum ada rekomendasi pelatihan.</strong>
+                Pemetaan kompetensi ASN atau pemetaan kompetensi ke pelatihan belum tersedia.
+            </div>
+        @endforelse
     </div>
 
     <div class="panel">

@@ -11,7 +11,9 @@
                 <h1 class="page-title">Data ASN</h1>
                 <p class="page-description">Cari ASN dan lihat ringkasan pelatihan serta kompetensinya.</p>
             </div>
+            @if(auth()->user()->isAdmin())
             <a href="{{ route('asn.create') }}" class="btn">+ Tambah ASN</a>
+        @endif
         </div>
     </div>
 
@@ -48,7 +50,7 @@
         <div class="table-toolbar">
             <div>
                 <h2>Daftar ASN</h2>
-                <p>Jumlah pada kolom Pelatihan adalah jumlah catatan pelatihan yang dimiliki ASN.</p>
+                <p>Lihat kompetensi ASN dan nama pelatihan yang sesuai berdasarkan pemetaan kompetensi.</p>
             </div>
             <div class="table-count">{{ number_format($asn->total(), 0, ',', '.') }} hasil</div>
         </div>
@@ -62,8 +64,8 @@
                         <th>Jabatan</th>
                         <th>Pangkat</th>
                         <th>Unit Kerja</th>
-                        <th>Pelatihan</th>
                         <th>Kompetensi</th>
+                        <th>Pelatihan yang Sesuai</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -78,8 +80,28 @@
                             <td>{{ $item->position ?: '-' }}</td>
                             <td>{{ $item->rank ?: '-' }}</td>
                             <td>{{ $item->unit?->name ?: '-' }}</td>
-                            <td><span class="count-badge {{ $item->trainings_count == 0 ? 'zero' : '' }}">{{ $item->trainings_count }}</span></td>
-                            <td><span class="count-badge {{ $item->competencies_count == 0 ? 'zero' : '' }}">{{ $item->competencies_count }}</span></td>
+                            <td>
+                                @if($item->competencies->isNotEmpty())
+                                    <div class="tag-list">
+                                        @foreach($item->competencies as $competency)
+                                            <span class="mapping-tag">{{ $competency->nama }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="secondary-text">Belum ada kompetensi</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($item->mapped_trainings->isNotEmpty())
+                                    <div class="training-match-list">
+                                        @foreach($item->mapped_trainings as $training)
+                                            <span class="training-match">🎓 {{ $training->name }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="secondary-text">Belum ada pelatihan yang terhubung dengan kompetensi</span>
+                                @endif
+                            </td>
                             <td><a href="{{ route('asn.show', $item) }}" class="btn btn-outline btn-small">Detail</a></td>
                         </tr>
                     @empty
